@@ -19,7 +19,7 @@ for applications_dir in "$HOME/.local/share/applications" "$HOME/.nix-profile/sh
 done
 
 if [[ -z $browser_exec ]]; then
-  omarchy-notification-send -u critical "Browser command not found: $browser"
+  omarchy-notification-send -u critical "$(omarchy-i18n browser.commandNotFound "$browser")"
   exit 1
 fi
 
