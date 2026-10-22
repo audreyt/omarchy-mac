@@ -118,3 +118,27 @@ launch --private
 [[ -s $help_log ]] || fail "a private launch probes the browser's private flag"
 grep -F -- 'chromium --incognito' "$launch_log" >/dev/null || fail "a private launch passes the browser's private flag"
 pass "a private launch passes the browser's private flag"
+
+spaced_desktop="userapp-Firefox Developer Edition-U5J9W3.desktop"
+cat >"$test_home/.local/share/applications/$spaced_desktop" <<'EOF'
+[Desktop Entry]
+Exec=chromium %u
+EOF
+cat >"$mock_bin/omarchy-cmd-default-browser" <<EOF
+#!/bin/bash
+printf '%s\n' '$spaced_desktop'
+EOF
+cat >"$mock_bin/omarchy-notification-send" <<'SH'
+#!/bin/bash
+printf '%s\n' "$*" >"$OMARCHY_TEST_BROWSER_NOTIFY"
+SH
+chmod +x "$mock_bin/omarchy-cmd-default-browser" "$mock_bin/omarchy-notification-send"
+rm -f "$launch_log"
+notify_log="$test_tmp/notify"
+HOME="$test_home" PATH="$mock_bin:$PATH" OMARCHY_TEST_BROWSER_LAUNCH="$launch_log" \
+  OMARCHY_TEST_BROWSER_FOCUS="$focus_log" OMARCHY_TEST_BROWSER_NOTIFY="$notify_log" \
+  bash "$ROOT/bin/omarchy-launch-browser" "https://example.test/spaced"
+[[ ! -e $notify_log ]] || fail "a desktop id with spaces still resolves to a browser command"
+grep -F 'https://example.test/spaced' "$launch_log" >/dev/null || fail "a desktop id with spaces still opens the URL"
+grep -F -- '-- chromium' "$launch_log" >/dev/null || fail "a desktop id with spaces launches the desktop entry's command"
+pass "a desktop id with spaces still launches the browser"
